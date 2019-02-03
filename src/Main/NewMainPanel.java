@@ -38,14 +38,17 @@ public class NewMainPanel extends JPanel implements KeyListener {
 	//When we will clear the lines and continue the game
 	public static long clearedLinesClearTime = 0;
 	
-	//How long to wait before clearing the lines
-	public static long clearedLinesClearDelay = 750;
+	//How long to wait before clearing the lines per line cleared
+	public static long clearedLinesClearDelay = 200;
 	
 	//How long to wait between placing a piece and showing the next one
 	public static long placementWaitDelay = 175;
 	
 	//When the next piece spawns in
 	public static long placementWaitTime = 0;
+	
+	//The timer for displaying "TETRIS" when a tetris is achieved
+	public static long tetrisTimer = 0;
 	
 	/*
 	 * 
@@ -405,7 +408,12 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		
 		//If we found any cleared lines, we need to set the show cleared lines timer
 		if( clearedLines.size() > 0 ) {
-			clearedLinesClearTime = System.currentTimeMillis() + clearedLinesClearDelay;
+			clearedLinesClearTime = System.currentTimeMillis() + clearedLinesClearDelay * clearedLines.size();
+		}
+		
+		//If it was a tetris, start the tetris text timer
+		if( clearedLines.size() == 4 ) {
+			tetrisTimer = clearedLinesClearTime;
 		}
 		
 		//Handle leveling up if needed
@@ -560,6 +568,25 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		
 		//Get the current system time
 		long time = System.currentTimeMillis();
+		
+		//Draw the TETRIS text if we just got a tetris
+		if( tetrisTimer != 0 ) {
+			if( time <= tetrisTimer ) {
+				
+				g.setFont( font );
+				g.setColor( Color.black );
+				
+				//This is bad for now
+				g.drawString( "TETRIS!", boardX + ( boardW * blockSize ) / 2 - 50, boardY + ( boardH * blockSize ) / 3 );
+				
+				
+			}else{
+				//Reset the tetris timer
+				tetrisTimer = 0;
+			}
+		}
+		
+		
 		
 		//If we are currently drawing cleared lines, do that
 		if( clearedLinesClearTime != 0 ) {
@@ -817,6 +844,8 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		
 		//Try to find an open space for this rotated piece
 		boolean success = Piece.tryToFitRotation( rotatedShape, activePiece.x, activePiece.y );
+		
+		System.out.println( "success : " + success );
 		
 		//If we found a spot, rotate clockwise
 		if( success ) {

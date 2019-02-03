@@ -259,10 +259,12 @@ public abstract class Piece {
 		//If rotating would put us past the right edge
 		if( Piece.isPastRightEdge( shape, checkX ) ) {
 
+			System.out.println( "Would be past edge" );
+			
 			//Start testing the shape slid left to see if we can un-stick it
 			//With a limit to how far we're willing to slide to find an open space
 			int testX = checkX;
-			for (int i = 0; i < 4; i++) {
+			for (int i = 0; i < 2; i++) {
 				//Move our testing position left
 				testX--;
 
@@ -323,7 +325,7 @@ public abstract class Piece {
 			//Start testing the shape slid right to see if we can un-stick it
 			//With a limit to how far we're willing to slide to find an open space
 			int testX = checkX;
-			for (int i = 0; i < 4; i++) {
+			for (int i = 0; i < 2; i++) {
 				//Move our testing position left
 				testX++;
 
