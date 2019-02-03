@@ -1,7 +1,5 @@
 package Pieces;
 
-import Main.MainPanel;
-
 public class ZPiece extends Piece {
 	public ZPiece() {
 		this.pieceNumber = Piece.ZTet;

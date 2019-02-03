@@ -1,7 +1,5 @@
 package Pieces;
 
-import Main.MainPanel;
-
 public class TPiece extends Piece {
 	public TPiece() {
 		this.pieceNumber = Piece.TTet;

@@ -1,7 +1,5 @@
 package Pieces;
 
-import Main.MainPanel;
-
 public class JPiece extends Piece {
 	public JPiece() {
 		this.pieceNumber = Piece.JTet;

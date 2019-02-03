@@ -1,7 +1,5 @@
 package Pieces;
 
-import Main.MainPanel;
-
 public class SPiece extends Piece {
 	public SPiece() {
 		this.pieceNumber = Piece.STet;

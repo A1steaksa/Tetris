@@ -1,7 +1,5 @@
 package Pieces;
 
-import Main.MainPanel;
-
 public class OPiece extends Piece {
 	public OPiece() {
 		this.pieceNumber = Piece.OTet;

@@ -2,6 +2,7 @@ package Main;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
@@ -11,19 +12,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
-import Pieces.IPiece;
-import Pieces.JPiece;
-import Pieces.LPiece;
-import Pieces.OPiece;
 import Pieces.Piece;
-import Pieces.SPiece;
-import Pieces.TPiece;
-import Pieces.ZPiece;
 
 public class NewMainPanel extends JPanel implements KeyListener {
 
@@ -60,7 +53,7 @@ public class NewMainPanel extends JPanel implements KeyListener {
 	 * 
 	 */
 	
-	//Size of the board
+	//Size of the board in blocks
 	public static int boardW = 10;
 	public static int boardH = 23;
 	
@@ -74,11 +67,11 @@ public class NewMainPanel extends JPanel implements KeyListener {
 	public static int[][] gameBoard = new int[ boardW ][ boardH ];
 	
 	//Position of the board
-	int boardX = 20;
+	int boardX = 150;
 	int boardY = 20;
 	
 	//Position of the queue
-	int queueX = 400;
+	int queueX = 500;
 	int queueY = 50;
 	
 	//Spacing between queue pieces
@@ -86,6 +79,30 @@ public class NewMainPanel extends JPanel implements KeyListener {
 	
 	//Size of the space above skyline that is shown
 	int skylineView = 10;
+	
+	//Position of the held piece
+	int heldPieceX = 20;
+	int heldPieceY = 20;
+	
+	//Position of the current level text
+	int levelX = 475;
+	int levelY = 525;
+	
+	//Position of the number of cleared lines text
+	int linesX = 475;
+	int linesY = 450;
+	
+	/*
+	 * 
+	 * Font
+	 * 
+	 */
+	
+	//The size of the main font
+	public static int fontSize = 35;
+	
+	//The main font itself
+	public static Font font;
 	
 	/*
 	 * 
@@ -197,6 +214,33 @@ public class NewMainPanel extends JPanel implements KeyListener {
 	//Tracks whether or not we can currently swap for the held piece
 	public static boolean canSwap = true;
 	
+	/*
+	 * 
+	 * Controls
+	 * 
+	 */
+	
+	//Auto repeat delay after pressing left/right to repeat the movement faster
+	public static long autoRepeatStartDelay = 300;
+	
+	//The timer to check if auto repeat should start
+	public static long autoRepeatStartTimer = 0;
+	
+	//The time between auto repeat movements
+	//We're shooting for ~0.5 seconds from one side of the matrix to the other
+	public static long autoRepeatMoveDelay = 15;
+	
+	//The timer for auto repeat movements
+	public static long autoRepeatMoveTimer = 0;
+	
+	//The direction that was most recently pressed
+	//-1 indicates left, 1 indicates right, 0 indicates no movement
+	public static int moveDirection = 0;
+	
+	//Tracks if left/right keys are held currently
+	public static boolean leftDown = false;
+	public static boolean rightDown = false;
+	
 	public NewMainPanel() throws IOException {
 		
 		//Preprocess the blocks to their colors
@@ -222,7 +266,10 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		fillQueue();
 		
 		//Set up the first piece
-		activePiece = getNextPiece();
+		loadNextActivePiece();
+		
+		//Create the main font
+		font = new Font( "Arial", Font.BOLD, fontSize );
 	}
 	
 	//Empties and then fills the piece bag
@@ -251,7 +298,6 @@ public class NewMainPanel extends JPanel implements KeyListener {
 			
 			//If the bag is empty, fill it
 			if( bag.isEmpty() ) {
-				System.out.println( "Fillbag" );
 				fillBag();
 			}
 			
@@ -263,26 +309,35 @@ public class NewMainPanel extends JPanel implements KeyListener {
 	}
 	
 	//Returns the next piece to drop
-	public static Piece getNextPiece() {
+	public static void loadNextActivePiece() {
 		
-		//A new piece has no movements
-		movementCount = 0;
-		
-		//A new piece has a high lowest y
-		lowestY = boardH;
-		
-		//Get the next piece from the queue
-		Piece nextPiece = queue.remove( 0 );
+		//Get the next piece from the queue and make it the active piece
+		activePiece = queue.remove( 0 );
 		
 		//Fill the queue
 		fillQueue();
 		
-		//Reset the next piece's Y
-		nextPiece.y = 23;
+		//Reset the new active piece
+		resetActivePiece();
 		
-		//In case of error, get them an I piece
-		return nextPiece;
+	}
+	
+	//Reset a piece so it can be the new active piece
+	public static void resetActivePiece() {
+		//Move it to the top of the matrix
+		activePiece.y = 23;
 		
+		//Center the piece
+		activePiece.x = boardW / 2 - activePiece.getRotationShape()[0].length / 2;
+		
+		//Reset the number of movements it has had so far
+		movementCount = 0;
+		
+		//Reset the piece's rotation
+		activePiece.rotation = 0;
+		
+		//Reset the y
+		lowestY = boardH;
 	}
 	
 	//The game is over
@@ -294,7 +349,7 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		gameBoard = new int[ boardW ][ boardH ];
 		
 		//Get a new active piece
-		activePiece = getNextPiece();
+		loadNextActivePiece();
 		
 	}
 	
@@ -423,14 +478,45 @@ public class NewMainPanel extends JPanel implements KeyListener {
 					int drawX = pieceX + x * blockSize;
 					int drawY = pieceY + y * blockSize;
 					
-					g.drawImage( blockImages[ piece.pieceNumber ], drawX, drawY, blockSize, blockSize, null );
+					g.drawImage( blockImages[ piece.pieceNumber ], drawX, drawY, blockSize, blockSize, null );		
+				}
+			}
+		}
+		
+		//Draw the held piece
+		//Only if we have one
+		if( heldPiece != null ) {
+			int[][] heldShape = heldPiece.getRotationShape();
+			
+			//Draw the piece
+			for (int y = 0; y < heldShape.length; y++) {
+				for (int x = 0; x < heldShape[y].length; x++) {
 					
+					//Only draw filled blocks
+					if( heldShape[y][x] == 0 ) {
+						continue;
+					}
+					
+					//The drawn X position of a block is ( the X position of the piece + the X position of the shape's block ) * the block size
+					//This also applies to Y
+					int drawX = heldPieceX + x * blockSize;
+					int drawY = heldPieceX + y * blockSize;
+					
+					g.drawImage( blockImages[ heldPiece.pieceNumber ], drawX, drawY, blockSize, blockSize, null );		
 				}
 			}
 			
-			
 		}
 		
+		//Draw the line count
+		g.setColor( Color.black );
+		g.setFont( font );
+		g.drawString( "Lines: " + lineCount , linesX, linesY );
+		
+		//Draw the level number
+		g.setColor( Color.black );
+		g.setFont( font );
+		g.drawString( "Level: " + currentLevel , levelX, levelY );
 		
 		//Only draw the board and it's pieces in the play matrix and part of the overflow matrix
 		g.setClip( boardX, boardY - skylineView, boardW * blockSize, boardH * blockSize + skylineView );
@@ -589,7 +675,7 @@ public class NewMainPanel extends JPanel implements KeyListener {
 					
 					//Place the piece
 					activePiece.place();
-					activePiece = getNextPiece();
+					loadNextActivePiece();
 				}
 				
 			}else {
@@ -620,8 +706,43 @@ public class NewMainPanel extends JPanel implements KeyListener {
 				
 				//Place the piece
 				activePiece.place();
-				activePiece = getNextPiece();
+				loadNextActivePiece();
+				
+				//We can now swap again
+				canSwap = true;
 			}
+		}
+		
+		
+		/*
+		 * Movement
+		 */
+		
+		
+		//If the auto repeat start timer is up, start the auto repeat move timer
+		if( autoRepeatStartTimer != 0 && time >= autoRepeatStartTimer ) {
+			autoRepeatStartTimer = 0;
+			autoRepeatMoveTimer = time + autoRepeatMoveDelay;
+		}
+		
+		//Check if the movement timer is active and up
+		if( autoRepeatMoveTimer != 0 && time >= autoRepeatMoveTimer ) {
+			
+			//This means that we should begin repeat movement in the movement direction
+			
+			//Reset the timer
+			autoRepeatMoveTimer = time + autoRepeatMoveDelay;
+			
+			//If we're moving left
+			if( moveDirection == -1 ){
+				moveLeft();
+			}
+			
+			//If we're moving right
+			if( moveDirection == 1 ){
+				moveRight();
+			}
+			
 		}
 		
 		repaint();
@@ -762,12 +883,50 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		
 		//Move left
 		if( event.getKeyCode() == KeyEvent.VK_LEFT ) {
+			
+			//If we're already holding left, this is a duplicate key stroke and should be ignored
+			if( leftDown ) {
+				return;
+			}
+			
 			moveLeft();
+			
+			//Start the auto repeat timer
+			autoRepeatStartTimer = System.currentTimeMillis() + autoRepeatStartDelay;
+			
+			//Stop any existing auto repeat timers
+			autoRepeatMoveTimer = 0;
+			
+			//Set our move direction to be left
+			moveDirection = -1;
+			
+			//Mark that we're holding left
+			leftDown = true;
+			
 		}
 		
 		//Move right
 		if( event.getKeyCode() == KeyEvent.VK_RIGHT ) {
+			
+			//If we're already holding right, this is a duplicate key stroke and should be ignored
+			if( rightDown ) {
+				return;
+			}
+			
 			moveRight();
+			
+			//Start the auto repeat timer
+			autoRepeatStartTimer = System.currentTimeMillis() + autoRepeatStartDelay;
+			
+			//Stop any existing auto repeat timers
+			autoRepeatMoveTimer = 0;
+			
+			//Set our move direction to be left
+			moveDirection = 1;
+			
+			//Mark that we're holding left
+			rightDown = true;
+			
 		}
 		
 		//Rotate clockwise
@@ -780,6 +939,33 @@ public class NewMainPanel extends JPanel implements KeyListener {
 			rotateCounterClockwise();
 		}
 		
+		//Swap held piece
+		if( event.getKeyCode() == KeyEvent.VK_C || event.getKeyCode() == KeyEvent.VK_SHIFT ) {
+			
+			//If we have already swapped, we can't swap again
+			if( !canSwap ) {
+				return;
+			}
+			
+			//If there isn't a held piece, the swapped piece will be another one from the queue
+			if( heldPiece == null ) {
+				heldPiece = activePiece;
+				loadNextActivePiece();
+			}else{
+				//Otherwise, just swap active and held
+				Piece temp = activePiece;
+				activePiece = heldPiece;
+				heldPiece = temp;
+			}
+			
+			//If we swapped we cannot swap again until the piece has been placed
+			canSwap = false;
+			
+			//Reset the swapped piece
+			resetActivePiece();
+			
+		}
+		
 	}
 
 	@Override
@@ -788,6 +974,57 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		//Fast drop
 		if( event.getKeyCode() == KeyEvent.VK_DOWN ) {
 			fastDrop = false;
+		}
+		
+		//Release left
+		if( event.getKeyCode() == KeyEvent.VK_LEFT ) {
+			leftDown = false;
+			
+			//If we aren't holding right when we release left, stop the auto repeat timer
+			if( !rightDown ) {
+				autoRepeatStartTimer = 0;
+				autoRepeatMoveTimer = 0;
+			}else{
+				
+				//If we are holding right, make that our new move direction
+				moveDirection = 1;
+				
+				//Move right
+				moveRight();
+				
+				//Start the auto repeat timer
+				autoRepeatStartTimer = System.currentTimeMillis() + autoRepeatStartDelay;
+				
+				//Stop any existing auto repeat timers
+				autoRepeatMoveTimer = 0;
+				
+			}
+			
+		}
+		
+		//Release right
+		if( event.getKeyCode() == KeyEvent.VK_RIGHT ) {
+			rightDown = false;
+			
+			//If we aren't holding left when we release left, stop the auto repeat timer
+			if( !leftDown ) {
+				autoRepeatStartTimer = 0;
+				autoRepeatMoveTimer = 0;
+			}else{
+				
+				//If we are holding left, make that our new move direction
+				moveDirection = -1;
+				
+				//Move left
+				moveLeft();
+				
+				//Start the auto repeat timer
+				autoRepeatStartTimer = System.currentTimeMillis() + autoRepeatStartDelay;
+				
+				//Stop any existing auto repeat timers
+				autoRepeatMoveTimer = 0;
+				
+			}
 		}
 		
 	}

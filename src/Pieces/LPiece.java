@@ -1,7 +1,5 @@
 package Pieces;
 
-import Main.MainPanel;
-
 public class LPiece extends Piece {
 	public LPiece() {
 		this.pieceNumber = Piece.LTet;

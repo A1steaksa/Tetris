@@ -1,5 +1,4 @@
 package Pieces;
-import Main.MainPanel;
 public class IPiece extends Piece {
 	public IPiece() {
 		this.pieceNumber = Piece.ITet;
