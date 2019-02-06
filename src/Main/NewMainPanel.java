@@ -354,6 +354,25 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		//Empty the board
 		gameBoard = new int[ boardW ][ boardH ];
 		
+		//Reset the level and lines
+		lineCount = 0;
+		lineGoal = 5;
+		currentLevel = 0;
+		
+		//Reset speed
+		updateDropTime();
+		
+		//Reset the bag and queue
+		bag.clear();
+		queue.clear();
+		fillQueue();
+		
+		//Empty held piece
+		heldPiece = null;
+		
+		//Reset the piece speed
+		handleLeveling();
+		
 		//Get a new active piece
 		loadNextActivePiece();
 		
@@ -372,11 +391,16 @@ public class NewMainPanel extends JPanel implements KeyListener {
 			lineGoal += currentLevel * lineGoalIncrease;
 			
 			//Change speed
-			//Equation from Tetris design doc
-			dropTime = (long) (Math.pow( 0.8 - ( (  currentLevel - 1 ) * 0.007 ), ( currentLevel - 1 ) ) * 1000L);
+			updateDropTime();
 			
 		}
 		
+	}
+	
+	//Recalculates drop time from the current level
+	public static void updateDropTime() {
+		//Equation from Tetris design doc
+		dropTime = (long) (Math.pow( 0.8 - ( (  currentLevel - 1 ) * 0.007 ), ( currentLevel - 1 ) ) * 1000L);
 	}
 	
 	//Checks the board for cleared lines
