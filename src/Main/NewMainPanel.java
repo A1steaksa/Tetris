@@ -284,7 +284,10 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		//Add bagSize number of each piece to the bag
 		for (int i = 1; i <= 7; i++) {
 			for (int j = 0; j < bagSize; j++) {
-				bag.add( Piece.getPiece( i ) );
+				//bag.add( Piece.getPiece( i ) );
+				
+				bag.add( Piece.getPiece( Piece.ITet ) );
+			
 			}
 		}
 		
@@ -842,13 +845,43 @@ public class NewMainPanel extends JPanel implements KeyListener {
 		//The shape we would be if we rotated
 		int[][] rotatedShape = activePiece.getClockwiseRotationShape();
 		
-		//Try to find an open space for this rotated piece
-		boolean success = Piece.tryToFitRotation( rotatedShape, activePiece.x, activePiece.y );
+		//Tracks if we were able to find a place for this rotation
+		boolean foundSpot = false;
 		
-		System.out.println( "success : " + success );
+		//Get the translations for this piece's starting rotation
+		int[][] translations = activePiece.clockwiseTranslations[ activePiece.pieceNumber ];
+		
+		//Check every translation
+		for (int i = 0; i < translations.length; i++) {
+			
+			int[] translation = translations[ i ];
+			
+			System.out.println( "Clockwise Checking " + translation[0] + ", " + translation[1] );
+			
+			int checkX = activePiece.x + translation[0];
+			int checkY = activePiece.y + translation[1];
+			
+			//If this rotation wouldn't make us collide, use it
+			if( !Piece.wouldShapeCollide( rotatedShape, checkX, checkY ) ) {
+				
+				System.out.println( "Clockwise Found opening at rotation " + activePiece.rotation + " and point " + ( i + 1 ) );
+				
+				//Move to this new position
+				activePiece.x = checkX;
+				activePiece.y = checkY;
+				
+				//Rotate the active piece
+				activePiece.rotateClockwise();
+				
+				//Stop checking
+				break;
+				
+			}
+			
+		}
 		
 		//If we found a spot, rotate clockwise
-		if( success ) {
+		if( foundSpot ) {
 			
 			//Modify lock timer if it's started
 			if( lockTime != 0 ) {
@@ -860,19 +893,55 @@ public class NewMainPanel extends JPanel implements KeyListener {
 			}
 			
 			activePiece.rotateClockwise();
+		}else {
+			System.out.println( "Clockwise Couldn't rotate" );
 		}
 	}
 	
-	//Rotate the active piece counter clickwise, if possible
+	//Rotate the active piece counter clockwise, if possible
 	public void rotateCounterClockwise() {
 		//The shape we would be if we rotated
 		int[][] rotatedShape = activePiece.getCounterClockwiseRotationShape();
 		
-		//Try to find an open space for this rotated piece
-		boolean success = Piece.tryToFitRotation( rotatedShape, activePiece.x, activePiece.y );
+		//Tracks if we were able to find a place for this rotation
+		boolean foundSpot = false;
 		
-		//If we found a spot, rotate counter clockwise
-		if( success ) {
+		//Get the translations for this piece's starting rotation
+		int[][] translations = activePiece.counterClockwiseTranslations[ activePiece.pieceNumber ];
+		
+		//Check every translation
+		for (int i = 0; i < translations.length; i++) {
+			
+			int[] translation = translations[ i ];
+			
+			System.out.println( "CounterClockwise Checking " + translation[0] + ", " + translation[1] );
+			
+			System.out.println( activePiece.x );
+			
+			int checkX = activePiece.x + translation[0];
+			int checkY = activePiece.y + translation[1];
+			
+			//If this rotation wouldn't make us collide, use it
+			if( !Piece.wouldShapeCollide( rotatedShape, checkX, checkY ) ) {
+				
+				System.out.println( "CounterClockwise Found opening at rotation " + activePiece.rotation + " and point " + ( i + 1 ) );
+				
+				//Move to this new position
+				activePiece.x = checkX;
+				activePiece.y = checkY;
+				
+				//Rotate the active piece
+				activePiece.rotateCounterClockwise();
+				
+				//Stop checking
+				break;
+				
+			}
+			
+		}
+		
+		//If we found a spot, rotate clockwise
+		if( foundSpot ) {
 			
 			//Modify lock timer if it's started
 			if( lockTime != 0 ) {
@@ -883,7 +952,9 @@ public class NewMainPanel extends JPanel implements KeyListener {
 				movementCount++;
 			}
 			
-			activePiece.rotateCounterClockwise();
+			activePiece.rotateClockwise();
+		}else {
+			System.out.println( "CounterClockwise Couldn't rotate" );
 		}
 	}
 

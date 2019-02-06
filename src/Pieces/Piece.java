@@ -7,6 +7,32 @@ import Main.NewMainPanel;
 
 public abstract class Piece {
 
+	//The enum for this piece shape
+	public int pieceNumber;
+
+	//Our current rotation
+	//Starting at 0, ending at 3, indicating the number of clockwise rotations from the starting rotation
+	public int rotation = 0;
+	
+	
+	/*
+	 * Translations
+	 * 
+	 * Format is:
+	 *	[Starting rotation][Rotation Point][x, y]
+	 */
+	
+	//The translations for each clockwise rotation
+	public int[][][] clockwiseTranslations;
+	//The translations for each counter clockwise rotation
+	public int[][][] counterClockwiseTranslations;
+
+	//The position of the piece in the board
+	public int x = 0, y = 23;
+
+	//All of the possible rotations of this piece
+	public int rotations[][][];
+	
 	//The piece enums
 	public static int OTet = 1;
 	public static int ITet = 2;
@@ -18,28 +44,15 @@ public abstract class Piece {
 
 	//Piece colors
 	public static Color[] colors = {
-			new Color( 0, 0, 0 ),
-			new Color( 192, 192, 192, 128 ),// O
-			new Color( 0, 255, 255, 128 ),	// I
-			new Color( 255, 255, 0, 128 ),	// T
-			new Color( 255, 0, 255, 128 ),	// L
-			new Color( 128, 0, 255, 128 ),	// J
-			new Color( 0, 255, 0, 128 ),	// S
-			new Color( 255, 0, 0, 128 ),	// Z
+		new Color( 0, 0, 0 ),
+		new Color( 192, 192, 192, 128 ),// O
+		new Color( 0, 255, 255, 128 ),	// I
+		new Color( 255, 255, 0, 128 ),	// T
+		new Color( 255, 0, 255, 128 ),	// L
+		new Color( 128, 0, 255, 128 ),	// J
+		new Color( 0, 255, 0, 128 ),	// S
+		new Color( 255, 0, 0, 128 ),	// Z
 	};
-
-	//The enum for this piece shape
-	public int pieceNumber;
-
-	//Our current rotation
-	//Starting at 0, ending at 3, indicating the number of clockwise rotations from the starting rotation
-	public int rotation = 0;
-
-	//The position of the piece in the board
-	public int x = 0, y = 23;
-
-	//All of the possible rotations of this piece
-	public int rotations[][][];
 
 	//Returns whether this piece would collide at a given position
 	public boolean wouldCollide( int testX, int testY ) {
@@ -63,9 +76,10 @@ public abstract class Piece {
 				int testX = checkX + x;
 				int testY = checkY - y - 1;
 
-				//If we're checking off the board, ignore that
+				//If we're checking off the board, that's a collision
 				if( testX < 0 || testX >= NewMainPanel.boardW ) {
-					continue;
+					System.out.println( "Checking off board" );
+					return true;
 				}
 
 				//If the testY is at or below the bottom of the game board, that's a collision
